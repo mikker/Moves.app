@@ -6,7 +6,7 @@
 - ✨ Hold down your chosen modifier keys and move the mouse. No need to fiddle with 3px wide window edges or far away title bars.
 - ⚡️ Moves lives in your menubar and is very light weight. The only thing it does, it does well.
 
-[video]
+https://github.com/user-attachments/assets/24a39439-c4b3-418e-a31a-ac124f177395
 
 ## License
 
