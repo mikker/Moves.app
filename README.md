@@ -8,6 +8,12 @@
 
 https://github.com/user-attachments/assets/24a39439-c4b3-418e-a31a-ac124f177395
 
+## Developing
+
+```sh
+$ carthage build
+```
+
 ## License
 
 MIT
