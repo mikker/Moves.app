@@ -1,0 +1,16 @@
+#!/bin/bash
+
+if [[ $1 == '' ]]; then
+  echo "Usage: bin/bump [MARKETING-VERSION]"
+  exit 1
+fi
+
+#read vesion number from version.txt in project root
+VERSION=$1
+BUILD=`git rev-list $(git rev-parse --abbrev-ref HEAD) | wc -l | awk '{ print $1 }'`
+BUILD="$((BUILD + 10))" # add 10 because reasons
+
+echo "${VERSION} (${BUILD})"
+
+agvtool new-marketing-version ${VERSION}
+agvtool new-version -all ${BUILD}

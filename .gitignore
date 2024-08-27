@@ -1,0 +1,4 @@
+Carthage/
+*.xcodeproj/xcuserdata/*
+*.xcuserdatad*
+Updates/*
