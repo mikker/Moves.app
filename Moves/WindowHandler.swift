@@ -6,9 +6,9 @@ class WindowHandler {
   var monitors: [Any?] = []
   var window: AccessibilityElement?
   private var resizeCorner: ResizeCorner?
-  var trackedWindowOrigin: CGPoint = .zero
-  var trackedWindowSize: CGSize = .zero
-  var initialMouseLocation: CGPoint = .zero
+  private var trackedWindowOrigin: CGPoint = .zero
+  private var trackedWindowSize: CGSize = .zero
+  private var initialMouseLocation: CGPoint = .zero
 
   var intention: Intention = .idle {
     didSet { intentionChanged(self.intention) }
@@ -38,10 +38,19 @@ class WindowHandler {
       return
     }
 
+    guard let trackedWindowOrigin = window.position else { return }
+    let trackedWindowSize: CGSize
+    if intention == .resize {
+      guard let size = window.size else { return }
+      trackedWindowSize = size
+    } else {
+      trackedWindowSize = .zero
+    }
+
     self.window = window
     self.initialMouseLocation = loc
-    self.trackedWindowOrigin = window.position ?? .zero
-    self.trackedWindowSize = window.size ?? .zero
+    self.trackedWindowOrigin = trackedWindowOrigin
+    self.trackedWindowSize = trackedWindowSize
     if intention == .resize && Defaults[.resizeFromClosestCorner] {
       resizeCorner = resolveResizeCorner(for: window, at: NSEvent.mouseLocation)
     }
