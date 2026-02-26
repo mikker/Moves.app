@@ -61,12 +61,12 @@ class WindowHandler {
     }
 
     self.monitors.append(
-      NSEvent.addGlobalMonitorForEvents(matching: .mouseMoved) { event in
+      NSEvent.addGlobalMonitorForEvents(matching: [.mouseMoved, .leftMouseDragged, .rightMouseDragged]) { event in
         self.mouseMoved(event)
       }
     )
     self.monitors.append(
-      NSEvent.addLocalMonitorForEvents(matching: .mouseMoved) { event in
+      NSEvent.addLocalMonitorForEvents(matching: [.mouseMoved, .leftMouseDragged, .rightMouseDragged]) { event in
         self.mouseMoved(event)
         return event
       }

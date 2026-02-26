@@ -6,8 +6,10 @@ class Modifiers {
 
   let handleChange: ChangeHandler
 
-  var onMonitors: [Any?] = []
-  var offMonitors: [Any?] = []
+  var monitors: [Any?] = []
+  private var activeModifiers: Set<Modifier> = []
+  private var isLeftMouseDown = false
+  private var isRightMouseDown = false
 
   var intention: Intention = .idle {
     didSet { intentionChanged(oldValue: oldValue) }
@@ -23,64 +25,66 @@ class Modifiers {
 
   func observe() {
     remove()
-
-    onMonitors.append(contentsOf: [
-      NSEvent.addGlobalMonitorForEvents(matching: .flagsChanged, handler: self.globalMonitor),
-      NSEvent.addLocalMonitorForEvents(matching: .flagsChanged, handler: self.localMonitor),
+    activeModifiers = []
+    isLeftMouseDown = false
+    isRightMouseDown = false
+    monitors.append(contentsOf: [
+      NSEvent.addGlobalMonitorForEvents(
+        matching: [.flagsChanged, .leftMouseDown, .leftMouseUp, .rightMouseDown, .rightMouseUp],
+        handler: self.globalMonitor
+      ),
+      NSEvent.addLocalMonitorForEvents(
+        matching: [.flagsChanged, .leftMouseDown, .leftMouseUp, .rightMouseDown, .rightMouseUp]
+      ) { event in
+        self.localMonitor(event)
+      },
     ])
   }
 
   func remove() {
-    removeOffMonitors()
-    removeOnMonitors()
-  }
-
-  private func removeOnMonitors() {
-    onMonitors.forEach { (monitor) in
-      guard let m = monitor else { return }
-      NSEvent.removeMonitor(m)
+    monitors.forEach { monitor in
+      guard let monitor else { return }
+      NSEvent.removeMonitor(monitor)
     }
-
-    onMonitors = []
-  }
-
-  private func removeOffMonitors() {
-    offMonitors.forEach { (monitor) in
-      guard let m = monitor else { return }
-      NSEvent.removeMonitor(m)
-    }
-
-    offMonitors = []
+    monitors = []
+    activeModifiers = []
+    isLeftMouseDown = false
+    isRightMouseDown = false
+    intention = .idle
   }
 
   private func intentionChanged(oldValue: Intention) {
     guard oldValue != intention else { return }
-
-    //    print("intention:\(intention)")
-
-    if intention == .idle {
-      removeOffMonitors()
-    } else {
-      setupOffMonitors()
-    }
-
     handleChange(intention)
   }
 
-  private func intentionFrom(_ flags: NSEvent.ModifierFlags) -> Intention {
-    let mods = modsFromFlags(flags)
-
-    if mods.isEmpty { return .idle }
-
+  private func intentionFromCurrentState() -> Intention {
     let moveMods = Defaults[.moveModifiers]
     let resizeMods = Defaults[.resizeModifiers]
+    let moveButtons = Defaults[.moveMouseButtons]
+    let resizeButtons = Defaults[.resizeMouseButtons]
 
-    if !moveMods.isEmpty && mods == moveMods {
+    if !moveMods.isEmpty && activeModifiers == moveMods && areButtonsPressed(moveButtons) {
       return .move
-    } else if !resizeMods.isEmpty && mods == resizeMods {
+    } else if !resizeMods.isEmpty && activeModifiers == resizeMods && areButtonsPressed(resizeButtons) {
       return .resize
     } else {
       return .idle
+    }
+  }
+
+  private func areButtonsPressed(_ buttons: Set<MouseButton>) -> Bool {
+    if buttons.isEmpty {
+      return false
+    }
+
+    return buttons.allSatisfy { button in
+      switch button {
+      case .left:
+        return isLeftMouseDown
+      case .right:
+        return isRightMouseDown
+      }
     }
   }
 
@@ -94,15 +98,21 @@ class Modifiers {
     return mods
   }
 
-  private func setupOffMonitors() {
-    offMonitors.append(contentsOf: [
-      NSEvent.addGlobalMonitorForEvents(matching: .mouseMoved, handler: self.globalMonitor),
-      NSEvent.addLocalMonitorForEvents(matching: .mouseMoved, handler: self.localMonitor),
-    ])
-  }
-
   private func globalMonitor(_ event: NSEvent) {
-    self.intention = self.intentionFrom(event.modifierFlags)
+    activeModifiers = modsFromFlags(event.modifierFlags)
+    switch event.type {
+    case .leftMouseDown:
+      isLeftMouseDown = true
+    case .leftMouseUp:
+      isLeftMouseDown = false
+    case .rightMouseDown:
+      isRightMouseDown = true
+    case .rightMouseUp:
+      isRightMouseDown = false
+    default:
+      break
+    }
+    intention = intentionFromCurrentState()
   }
 
   private func localMonitor(_ event: NSEvent) -> NSEvent? {
