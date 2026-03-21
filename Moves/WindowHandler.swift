@@ -28,7 +28,14 @@ class WindowHandler {
     }
 
     let loc = Mouse.location()
-    guard let window = AccessibilityElement.at(loc)?.window else { return }
+
+    let window: AccessibilityElement
+    if let w = AccessibilityElement.at(loc)?.window {
+      window = w
+    } else {
+      guard let fallback = ActiveWindow.getFrontmost() else { return }
+      window = fallback
+    }
 
     let app = window.application
 
