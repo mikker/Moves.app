@@ -28,14 +28,7 @@ class WindowHandler {
     }
 
     let loc = Mouse.location()
-
-    let window: AccessibilityElement
-    if let w = AccessibilityElement.at(loc)?.window {
-      window = w
-    } else {
-      guard let fallback = ActiveWindow.getFrontmost() else { return }
-      window = fallback
-    }
+    guard let window = window(at: loc) else { return }
 
     let app = window.application
 
@@ -78,6 +71,93 @@ class WindowHandler {
         return event
       }
     )
+  }
+
+  private func window(at loc: CGPoint) -> AccessibilityElement? {
+    let element = AccessibilityElement.at(loc)
+
+    if let window = element?.window {
+      return window
+    }
+
+    if let onScreenWindow = onScreenWindow(at: loc),
+      let window = window(matching: onScreenWindow, at: loc)
+    {
+      return window
+    }
+
+    if let app = element?.application,
+      let window = window(containing: loc, in: app)
+    {
+      return window
+    }
+
+    guard let fallback = ActiveWindow.getFrontmost(), contains(loc, in: fallback) else { return nil }
+    return fallback
+  }
+
+  private func onScreenWindow(at loc: CGPoint) -> OnScreenWindow? {
+    guard
+      let windowList =
+        CGWindowListCopyWindowInfo([.optionOnScreenOnly, .excludeDesktopElements], kCGNullWindowID)
+        as? [[String: Any]]
+    else { return nil }
+
+    return windowList.lazy
+      .compactMap { info in
+        guard let pid = (info[kCGWindowOwnerPID as String] as? NSNumber)?.int32Value else { return nil }
+        guard let layer = (info[kCGWindowLayer as String] as? NSNumber)?.intValue, layer == 0 else {
+          return nil
+        }
+        guard let alpha = (info[kCGWindowAlpha as String] as? NSNumber)?.doubleValue, alpha > 0 else {
+          return nil
+        }
+        guard let bounds = CGRect.dictionary(info[kCGWindowBounds as String]) else { return nil }
+        return OnScreenWindow(pid: pid, bounds: bounds)
+      }
+      .first { $0.bounds.contains(loc) }
+  }
+
+  private func window(matching onScreenWindow: OnScreenWindow, at loc: CGPoint) -> AccessibilityElement? {
+    guard let app = Application(forProcessID: onScreenWindow.pid) else { return nil }
+
+    let matchingWindow = windows(in: app)
+      .compactMap { window -> (AccessibilityElement, CGFloat)? in
+        guard let frame = frame(of: window), frame.intersects(onScreenWindow.bounds) else { return nil }
+        return (window, frameDistance(frame, onScreenWindow.bounds))
+      }
+      .min { $0.1 < $1.1 }?
+      .0
+
+    if let matchingWindow {
+      return matchingWindow
+    }
+
+    return window(containing: loc, in: app)
+  }
+
+  private func window(containing loc: CGPoint, in app: Application) -> AccessibilityElement? {
+    windows(in: app).first { contains(loc, in: $0) }
+  }
+
+  private func windows(in app: Application) -> [AccessibilityElement] {
+    guard let windows: [AXUIElement] = try? app.attribute(.windows) else { return [] }
+    return windows.map { AccessibilityElement(ref: UIElement($0)) }
+  }
+
+  private func frame(of window: AccessibilityElement) -> CGRect? {
+    guard let origin = window.position, let size = window.size else { return nil }
+    return CGRect(origin: origin, size: size)
+  }
+
+  private func contains(_ loc: CGPoint, in window: AccessibilityElement) -> Bool {
+    guard let frame = frame(of: window) else { return false }
+    return frame.contains(loc)
+  }
+
+  private func frameDistance(_ lhs: CGRect, _ rhs: CGRect) -> CGFloat {
+    abs(lhs.minX - rhs.minX) + abs(lhs.minY - rhs.minY) + abs(lhs.width - rhs.width)
+      + abs(lhs.height - rhs.height)
   }
 
   private func getBundleID(for axApplication: AXUIElement) -> String? {
@@ -172,6 +252,18 @@ class WindowHandler {
     window.resizeTo(CGSize(width: newMaxX - newMinX, height: newMaxY - newMinY))
   }
 
+}
+
+private struct OnScreenWindow {
+  let pid: pid_t
+  let bounds: CGRect
+}
+
+private extension CGRect {
+  static func dictionary(_ value: Any?) -> CGRect? {
+    guard let dictionary = value as? NSDictionary else { return nil }
+    return CGRect(dictionaryRepresentation: dictionary)
+  }
 }
 
 private enum ResizeAxisEdge {
