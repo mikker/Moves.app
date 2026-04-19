@@ -474,7 +474,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
 				INFOPLIST_FILE = Moves/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = Moves;
+				INFOPLIST_KEY_CFBundleDisplayName = "Moves Dev";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(LD_RUNPATH_SEARCH_PATHS_$(IS_MACCATALYST))",
@@ -484,8 +484,10 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				MARKETING_VERSION = 1.9.1;
-				PRODUCT_BUNDLE_IDENTIFIER = com.brnbw.Moves;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				MOVES_URL_NAME = com.brnbw.moves.dev;
+				MOVES_URL_SCHEME = "moves-dev";
+				PRODUCT_BUNDLE_IDENTIFIER = com.brnbw.Moves.dev;
+				PRODUCT_NAME = "Moves Dev";
 				SWIFT_VERSION = 5.0;
 			};
 			name = Debug;
@@ -513,6 +515,8 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				MARKETING_VERSION = 1.9.1;
+				MOVES_URL_NAME = com.brnbw.moves;
+				MOVES_URL_SCHEME = moves;
 				PRODUCT_BUNDLE_IDENTIFIER = com.brnbw.Moves;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
@@ -536,7 +540,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.brnbw.MovesTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Moves.app/Contents/MacOS/Moves";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Moves Dev.app/Contents/MacOS/Moves Dev";
 			};
 			name = Debug;
 		};
