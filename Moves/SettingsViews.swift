@@ -9,6 +9,8 @@ import UniformTypeIdentifiers
 struct GeneralSettingsPane: View {
   @Default(.moveModifiers) private var moveModifiers
   @Default(.resizeModifiers) private var resizeModifiers
+  @Default(.moveMouseButtons) private var moveMouseButtons
+  @Default(.resizeMouseButtons) private var resizeMouseButtons
   @Default(.resizeFromClosestCorner) private var resizeFromClosestCorner
   @Default(.bringToFront) private var bringToFront
   @Default(.accessibilityEnabled) private var accessibilityEnabled
@@ -38,11 +40,17 @@ struct GeneralSettingsPane: View {
           ModifierSegments(modifiers: $moveModifiers)
             .frame(height: 24)
             .frame(maxWidth: 200, alignment: .leading)
+          MouseButtonSegments(buttons: $moveMouseButtons)
+            .frame(height: 28)
+            .frame(maxWidth: 280, alignment: .leading)
 
           ModifierRow(title: "Resize", isDisabled: resizeModifiers.isEmpty)
           ModifierSegments(modifiers: $resizeModifiers)
             .frame(height: 24)
             .frame(maxWidth: 200, alignment: .leading)
+          MouseButtonSegments(buttons: $resizeMouseButtons)
+            .frame(height: 28)
+            .frame(maxWidth: 280, alignment: .leading)
 
           Spacer()
 
@@ -357,6 +365,37 @@ private struct ModifierSegments: NSViewRepresentable {
       }
       parent.modifiers = newModifiers
     }
+  }
+}
+
+private struct MouseButtonSegments: View {
+  @Binding var buttons: Set<MouseButton>
+
+  var body: some View {
+    HStack(spacing: 8) {
+      Toggle(isOn: binding(for: .left)) {
+        Label("Left mouse", systemImage: "computermouse")
+      }
+      .toggleStyle(.button)
+
+      Toggle(isOn: binding(for: .right)) {
+        Label("Right mouse", systemImage: "computermouse.fill")
+      }
+      .toggleStyle(.button)
+    }
+  }
+
+  private func binding(for button: MouseButton) -> Binding<Bool> {
+    Binding(
+      get: { buttons.contains(button) },
+      set: { isSelected in
+        if isSelected {
+          buttons.insert(button)
+        } else {
+          buttons.remove(button)
+        }
+      }
+    )
   }
 }
 
