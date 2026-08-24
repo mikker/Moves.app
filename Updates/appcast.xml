@@ -3,13 +3,13 @@
 <channel>
 <title>Moves</title>
 <item>
-<title>1.9.5</title>
-<pubDate>Wed, 17 Jun 2026 09:00:27 +0000</pubDate>
+<title>1.10.0</title>
+<pubDate>Mon, 24 Aug 2026 09:07:32 +0000</pubDate>
 <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
-<enclosure url="https://github.com/mikker/Moves.app/releases/download/v1.9.5/Moves.app.zip" sparkle:version="132" sparkle:shortVersionString="1.9.5" length="1930599" type="application/octet-stream" sparkle:edSignature="Z+G9Wr0vNq0obxH3Tfj9VBXvnN0RSIma2Abn/A+4J35pk37uxulIRwaB4UoBwK7C9R6EpZx+O7gqfvUioc55Bg=="/>
+<enclosure url="https://github.com/mikker/Moves.app/releases/download/v1.10.0/Moves.app.zip" sparkle:version="137" sparkle:shortVersionString="1.10.0" length="1907681" type="application/octet-stream" sparkle:edSignature="fSH5WU/IbD0WKd/3gaCBDYb4Q/dzYWhnYPl54N+v3wiDuc10CYpaaNLSm4L3FMLf/DY+BzK1gKYYyryfy8X+Bw=="/>
 <description><![CDATA[
 <ul>
-<li>Fix stale modifier tracking</li>
+<li>Add an option to require clicking before handling windows</li>
 </ul>
 ]]></description>
 </item>
