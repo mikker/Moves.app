@@ -1,3 +1,7 @@
+## 1.10.0 (137)
+
+- Add an option to require clicking before handling windows
+
 ## 1.9.5 (132)
 
 - Fix stale modifier tracking
