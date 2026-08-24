@@ -55,7 +55,7 @@ class WindowHandler {
     let app = window.application
 
     if let path = applicationPath(app: app),
-      Defaults[.excludedApplicationPaths].contains(path)
+      AppExclusion.isExcluded(path, in: Defaults[.excludedApplicationPaths])
     {
       return
     }
@@ -247,8 +247,7 @@ class WindowHandler {
       print("no url")
       return nil
     }
-    let path = url.path
-    return path.hasSuffix("/") ? path : path.appending("/")
+    return url.path
   }
 
   private func mouseMoved(_ event: NSEvent) {
@@ -316,6 +315,17 @@ class WindowHandler {
     window.resizeTo(CGSize(width: newMaxX - newMinX, height: newMaxY - newMinY))
   }
 
+}
+
+enum AppExclusion {
+  static func isExcluded(_ path: String, in excludedPaths: Set<String>) -> Bool {
+    let normalized = normalize(path)
+    return excludedPaths.contains { normalize($0) == normalized }
+  }
+
+  static func normalize(_ path: String) -> String {
+    path.hasSuffix("/") ? String(path.dropLast()) : path
+  }
 }
 
 private struct OnScreenWindow {

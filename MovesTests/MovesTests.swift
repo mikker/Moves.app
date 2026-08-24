@@ -20,4 +20,28 @@ class MovesTests: XCTestCase {
 
     assert(result == "/Applications/Xcode.app")
   }
+
+  func testExclusionMatchesPathsStoredWithoutTrailingSlash() {
+    let excluded: Set<String> = ["/Applications/Adobe InDesign 2025/Adobe InDesign 2025.app"]
+
+    XCTAssertTrue(
+      AppExclusion.isExcluded(
+        "/Applications/Adobe InDesign 2025/Adobe InDesign 2025.app", in: excluded))
+    XCTAssertTrue(
+      AppExclusion.isExcluded(
+        "/Applications/Adobe InDesign 2025/Adobe InDesign 2025.app/", in: excluded))
+  }
+
+  func testExclusionMatchesLegacyPathsStoredWithTrailingSlash() {
+    let excluded: Set<String> = ["/Applications/Xcode.app/"]
+
+    XCTAssertTrue(AppExclusion.isExcluded("/Applications/Xcode.app", in: excluded))
+    XCTAssertTrue(AppExclusion.isExcluded("/Applications/Xcode.app/", in: excluded))
+  }
+
+  func testExclusionDoesNotMatchOtherApps() {
+    let excluded: Set<String> = ["/Applications/Xcode.app/"]
+
+    XCTAssertFalse(AppExclusion.isExcluded("/Applications/Safari.app", in: excluded))
+  }
 }
