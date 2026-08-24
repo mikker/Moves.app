@@ -20,6 +20,8 @@ extension Defaults.Keys {
 
   static let bringToFront = Key<Bool>("bringToFront", default: false)
 
+  static let requireClick = Key<Bool>("requireClick", default: false)
+
   static let resizeFromClosestCorner = Key<Bool>("resizeFromClosestCorner", default: true)
 
   static let showSettingsOnLaunch = Key<Bool>("showSettingsOnLaunch", default: true)

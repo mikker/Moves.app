@@ -11,6 +11,7 @@ struct GeneralSettingsPane: View {
   @Default(.resizeModifiers) private var resizeModifiers
   @Default(.resizeFromClosestCorner) private var resizeFromClosestCorner
   @Default(.bringToFront) private var bringToFront
+  @Default(.requireClick) private var requireClick
   @Default(.accessibilityEnabled) private var accessibilityEnabled
   @Default(.showSettingsOnLaunch) private var showSettingsOnLaunch
   @Default(.showInMenubar) private var showInMenubar
@@ -45,6 +46,8 @@ struct GeneralSettingsPane: View {
             .frame(maxWidth: 200, alignment: .leading)
 
           Spacer()
+
+          Toggle("Require click before handling", isOn: $requireClick)
 
           Toggle("Bring window to front when handling", isOn: $bringToFront)
         }

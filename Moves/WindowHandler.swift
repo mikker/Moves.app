@@ -20,13 +20,35 @@ class WindowHandler {
 
   func intentionChanged(_ intention: Intention) {
     removeMonitors()
+    self.window = nil
     resizeCorner = nil
 
     if intention == .idle {
-      self.window = nil
       return
     }
 
+    if Defaults[.requireClick] {
+      observeMouseDown()
+    } else {
+      beginHandling()
+    }
+  }
+
+  private func observeMouseDown() {
+    monitors.append(
+      NSEvent.addGlobalMonitorForEvents(matching: .leftMouseDown) { _ in
+        self.beginHandling()
+      }
+    )
+    monitors.append(
+      NSEvent.addLocalMonitorForEvents(matching: .leftMouseDown) { event in
+        self.beginHandling()
+        return event
+      }
+    )
+  }
+
+  private func beginHandling() {
     let loc = Mouse.location()
     guard let window = window(at: loc) else { return }
 
@@ -60,17 +82,50 @@ class WindowHandler {
       try? window.ref.setAttribute(.main, value: true)
     }
 
-    self.monitors.append(
-      NSEvent.addGlobalMonitorForEvents(matching: .mouseMoved) { event in
+    removeMonitors()
+
+    let movementEvents: NSEvent.EventTypeMask = Defaults[.requireClick]
+      ? [.mouseMoved, .leftMouseDragged]
+      : .mouseMoved
+    monitors.append(
+      NSEvent.addGlobalMonitorForEvents(matching: movementEvents) { event in
         self.mouseMoved(event)
       }
     )
-    self.monitors.append(
-      NSEvent.addLocalMonitorForEvents(matching: .mouseMoved) { event in
+    monitors.append(
+      NSEvent.addLocalMonitorForEvents(matching: movementEvents) { event in
         self.mouseMoved(event)
         return event
       }
     )
+
+    if Defaults[.requireClick] {
+      observeMouseUp()
+    }
+  }
+
+  private func observeMouseUp() {
+    monitors.append(
+      NSEvent.addGlobalMonitorForEvents(matching: .leftMouseUp) { _ in
+        self.finishHandling()
+      }
+    )
+    monitors.append(
+      NSEvent.addLocalMonitorForEvents(matching: .leftMouseUp) { event in
+        self.finishHandling()
+        return event
+      }
+    )
+  }
+
+  private func finishHandling() {
+    removeMonitors()
+    window = nil
+    resizeCorner = nil
+
+    if intention != .idle {
+      observeMouseDown()
+    }
   }
 
   private func window(at loc: CGPoint) -> AccessibilityElement? {
