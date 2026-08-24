@@ -487,6 +487,7 @@
 				MOVES_URL_NAME = com.brnbw.moves.dev;
 				MOVES_URL_SCHEME = "moves-dev";
 				PRODUCT_BUNDLE_IDENTIFIER = com.brnbw.Moves.dev;
+				PRODUCT_MODULE_NAME = Moves;
 				PRODUCT_NAME = "Moves Dev";
 				SWIFT_VERSION = 5.0;
 			};
@@ -518,6 +519,7 @@
 				MOVES_URL_NAME = com.brnbw.moves;
 				MOVES_URL_SCHEME = moves;
 				PRODUCT_BUNDLE_IDENTIFIER = com.brnbw.Moves;
+				PRODUCT_MODULE_NAME = Moves;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
 			};
