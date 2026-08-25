@@ -83,9 +83,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     }
   }
 
-  func applicationWillTerminate(_ aNotification: Notification) {
-  }
-
   func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
     showSettingsWindow()
     return false
@@ -118,6 +115,18 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
   private var registeredURLSchemes: Set<String> {
     guard let urlTypes = Bundle.main.object(forInfoDictionaryKey: "CFBundleURLTypes") as? [[String: Any]] else { return [] }
     return Set(urlTypes.flatMap { $0["CFBundleURLSchemes"] as? [String] ?? [] })
+  }
+
+  private func applyToURLTarget(_ operation: (AccessibilityElement) -> Void) {
+    guard let application = ActiveWindow.getFrontmostApplication(
+      excluding: ProcessInfo.processInfo.processIdentifier),
+      let window = ActiveWindow.getMainWindow(of: application)
+    else { return }
+
+    operation(window)
+    DispatchQueue.main.async {
+      application.activate()
+    }
   }
 
   private func sanitizeSettingsWindowAutosave() {
@@ -214,7 +223,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
       guard !templateName.isEmpty else { return }
 
       guard let templateType = TemplateType(rawValue: templateName) else { return }
-      ActiveWindow.applyTemplate(templateType)
+      applyToURLTarget { ActiveWindow.applyTemplate(templateType, to: $0) }
 
     case "custom":
       let positionString: String
@@ -287,8 +296,16 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         yOffset = CGFloat(relativeYOffset) * screenRect.height
       }
 
-      ActiveWindow.customPosition(
-        position: position, width: width, height: height, xOffset: xOffset, yOffset: yOffset)
+      applyToURLTarget {
+        ActiveWindow.position(
+          position,
+          window: $0,
+          width: width,
+          height: height,
+          xOffset: xOffset,
+          yOffset: yOffset
+        )
+      }
 
     default:
       break

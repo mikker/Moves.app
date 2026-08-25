@@ -4,7 +4,34 @@ import Cocoa
 class ActiveWindow {
   static func getFrontmost() -> AccessibilityElement? {
     guard let app = NSWorkspace.shared.frontmostApplication else { return nil }
+    return getMainWindow(of: app)
+  }
 
+  static func getFrontmostApplication(excluding excludedPID: pid_t) -> NSRunningApplication? {
+    guard
+      let windowList = CGWindowListCopyWindowInfo(
+        [.optionOnScreenOnly, .excludeDesktopElements],
+        kCGNullWindowID
+      ) as? [[String: Any]]
+    else { return nil }
+
+    for info in windowList {
+      guard let pid = (info[kCGWindowOwnerPID as String] as? NSNumber)?.int32Value,
+        pid != excludedPID,
+        let layer = (info[kCGWindowLayer as String] as? NSNumber)?.intValue,
+        layer == 0,
+        let alpha = (info[kCGWindowAlpha as String] as? NSNumber)?.doubleValue,
+        alpha > 0,
+        let application = NSRunningApplication(processIdentifier: pid)
+      else { continue }
+
+      return application
+    }
+
+    return nil
+  }
+
+  static func getMainWindow(of app: NSRunningApplication) -> AccessibilityElement? {
     do {
       if let appElement = Application(forProcessID: app.processIdentifier) {
         let windows: [AXUIElement]? = try appElement.attribute(.windows)
@@ -19,22 +46,21 @@ class ActiveWindow {
     return nil
   }
 
-  static func applyTemplate(_ templateType: TemplateType) {
+  static func applyTemplate(_ templateType: TemplateType, to window: AccessibilityElement) {
     let operation = templateType.operation
 
     switch operation {
     case .action(let action):
-      performAction(action)
+      performAction(action, on: window)
 
     case .position(let positionType, let size):
       let screenRect = NSScreen.main?.visibleFrame ?? .zero
       let (width, height) = size.toAbsoluteSize(for: screenRect)
-      position(positionType, width: width, height: height)
+      position(positionType, window: window, width: width, height: height)
     }
   }
 
-  static func performAction(_ action: WindowAction) {
-    guard let window = getFrontmost() else { return }
+  static func performAction(_ action: WindowAction, on window: AccessibilityElement) {
     let screenRect = NSScreen.main?.visibleFrame ?? .zero
     let windowPosition = window.position ?? .zero
     let windowSize = window.size ?? .zero
@@ -46,7 +72,7 @@ class ActiveWindow {
         // Use reasonable size if currently full screen
         let size = CGSize(width: screenRect.width * 0.6, height: screenRect.height * 0.6)
         // Just use position to handle both moves and resize in correct order
-        position(.center, width: size.width, height: size.height)
+        position(.center, window: window, width: size.width, height: size.height)
       } else {
         // Go full screen
         window.moveTo(CGPoint(x: screenRect.minX, y: screenRect.minY))
@@ -74,7 +100,7 @@ class ActiveWindow {
         || windowPosition.y < screenRect.minY
         || windowPosition.y + windowSize.height > screenRect.maxY
       {
-        position(.center, width: windowSize.width, height: windowSize.height)
+        position(.center, window: window, width: windowSize.width, height: windowSize.height)
       }
 
     case .secondFourth:
@@ -102,11 +128,10 @@ class ActiveWindow {
   }
 
   static func position(
-    _ position: WindowPosition, width: CGFloat? = nil, height: CGFloat? = nil, xOffset: CGFloat = 0,
+    _ position: WindowPosition, window: AccessibilityElement, width: CGFloat? = nil,
+    height: CGFloat? = nil, xOffset: CGFloat = 0,
     yOffset: CGFloat = 0
   ) {
-    guard let window = getFrontmost() else { return }
-
     let screenRect = NSScreen.main?.visibleFrame ?? .zero
     let currentPosition = window.position ?? .zero
 
@@ -173,12 +198,4 @@ class ActiveWindow {
     }
   }
 
-  // For custom URL scheme positioning
-  static func customPosition(
-    position: WindowPosition,
-    width: CGFloat? = nil, height: CGFloat? = nil,
-    xOffset: CGFloat = 0, yOffset: CGFloat = 0
-  ) {
-    self.position(position, width: width, height: height, xOffset: xOffset, yOffset: yOffset)
-  }
 }
