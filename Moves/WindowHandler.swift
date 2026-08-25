@@ -5,10 +5,14 @@ import Defaults
 class WindowHandler {
   var monitors: [Any?] = []
   var window: AccessibilityElement?
+  private var eventTap: CFMachPort?
+  private var eventTapSource: CFRunLoopSource?
   private var resizeCorner: ResizeCorner?
   private var trackedWindowOrigin: CGPoint = .zero
   private var trackedWindowSize: CGSize = .zero
   private var initialMouseLocation: CGPoint = .zero
+  private var pendingMouseLocation: CGPoint?
+  private var mouseMoveScheduled = false
 
   var intention: Intention = .idle {
     didSet { intentionChanged(self.intention) }
@@ -22,6 +26,7 @@ class WindowHandler {
     removeMonitors()
     self.window = nil
     resizeCorner = nil
+    pendingMouseLocation = nil
 
     if intention == .idle {
       return
@@ -35,6 +40,10 @@ class WindowHandler {
   }
 
   private func observeMouseDown() {
+    if installEventTap() {
+      return
+    }
+
     monitors.append(
       NSEvent.addGlobalMonitorForEvents(matching: .leftMouseDown) { _ in
         self.beginHandling()
@@ -48,22 +57,22 @@ class WindowHandler {
     )
   }
 
-  private func beginHandling() {
-    let loc = Mouse.location()
-    guard let window = window(at: loc) else { return }
+  @discardableResult
+  private func beginHandling(at loc: CGPoint = Mouse.location()) -> Bool {
+    guard let window = window(at: loc) else { return false }
 
     let app = window.application
 
     if let path = applicationPath(app: app),
       Defaults[.excludedApplicationPaths].contains(path)
     {
-      return
+      return false
     }
 
-    guard let trackedWindowOrigin = window.position else { return }
+    guard let trackedWindowOrigin = window.position else { return false }
     let trackedWindowSize: CGSize
     if intention == .resize {
-      guard let size = window.size else { return }
+      guard let size = window.size else { return false }
       trackedWindowSize = size
     } else {
       trackedWindowSize = .zero
@@ -74,7 +83,7 @@ class WindowHandler {
     self.trackedWindowOrigin = trackedWindowOrigin
     self.trackedWindowSize = trackedWindowSize
     if intention == .resize && Defaults[.resizeFromClosestCorner] {
-      resizeCorner = resolveResizeCorner(for: window, at: NSEvent.mouseLocation)
+      resizeCorner = resolveResizeCorner(for: window, at: loc)
     }
 
     if Defaults[.bringToFront] {
@@ -82,19 +91,24 @@ class WindowHandler {
       try? window.ref.setAttribute(.main, value: true)
     }
 
+    if eventTap != nil {
+      return true
+    }
+
     removeMonitors()
 
-    let movementEvents: NSEvent.EventTypeMask = Defaults[.requireClick]
+    let movementEvents: NSEvent.EventTypeMask =
+      Defaults[.requireClick]
       ? [.mouseMoved, .leftMouseDragged]
       : .mouseMoved
     monitors.append(
-      NSEvent.addGlobalMonitorForEvents(matching: movementEvents) { event in
-        self.mouseMoved(event)
+      NSEvent.addGlobalMonitorForEvents(matching: movementEvents) { _ in
+        self.mouseMoved(at: Mouse.location())
       }
     )
     monitors.append(
       NSEvent.addLocalMonitorForEvents(matching: movementEvents) { event in
-        self.mouseMoved(event)
+        self.mouseMoved(at: Mouse.location())
         return event
       }
     )
@@ -102,6 +116,7 @@ class WindowHandler {
     if Defaults[.requireClick] {
       observeMouseUp()
     }
+    return true
   }
 
   private func observeMouseUp() {
@@ -119,10 +134,14 @@ class WindowHandler {
   }
 
   private func finishHandling() {
-    removeMonitors()
     window = nil
     resizeCorner = nil
 
+    if eventTap != nil {
+      return
+    }
+
+    removeMonitors()
     if intention != .idle {
       observeMouseDown()
     }
@@ -251,12 +270,26 @@ class WindowHandler {
     return path.hasSuffix("/") ? path : path.appending("/")
   }
 
-  private func mouseMoved(_ event: NSEvent) {
+  private func mouseMoved(at location: CGPoint) {
     switch intention {
-    case .move: move(event)
-    case .resize: resize(event)
+    case .move: move(to: location)
+    case .resize: resize(to: location)
     case .idle:
       assertionFailure("mouseMoved obseved while ignoring")
+    }
+  }
+
+  private func scheduleMouseMoved(to location: CGPoint) {
+    pendingMouseLocation = location
+    guard !mouseMoveScheduled else { return }
+    mouseMoveScheduled = true
+
+    DispatchQueue.main.async { [weak self] in
+      guard let self else { return }
+      self.mouseMoveScheduled = false
+      guard let location = self.pendingMouseLocation else { return }
+      self.pendingMouseLocation = nil
+      self.mouseMoved(at: location)
     }
   }
 
@@ -266,11 +299,72 @@ class WindowHandler {
       NSEvent.removeMonitor(m)
     }
     self.monitors = []
+
+    if let eventTapSource {
+      CFRunLoopRemoveSource(CFRunLoopGetMain(), eventTapSource, .commonModes)
+      self.eventTapSource = nil
+    }
+    if let eventTap {
+      CFMachPortInvalidate(eventTap)
+      self.eventTap = nil
+    }
   }
 
-  private func move(_ event: NSEvent) {
+  private func installEventTap() -> Bool {
+    let eventTypes: [CGEventType] = [
+      .leftMouseDown, .mouseMoved, .leftMouseDragged, .leftMouseUp,
+    ]
+    let mask = eventTypes.reduce(CGEventMask(0)) { mask, type in
+      mask | (CGEventMask(1) << type.rawValue)
+    }
+    guard
+      let eventTap = CGEvent.tapCreate(
+        tap: .cgSessionEventTap,
+        place: .headInsertEventTap,
+        options: .defaultTap,
+        eventsOfInterest: mask,
+        callback: windowHandlerEventTapCallback,
+        userInfo: Unmanaged.passUnretained(self).toOpaque()
+      ),
+      let eventTapSource = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, eventTap, 0)
+    else { return false }
+
+    self.eventTap = eventTap
+    self.eventTapSource = eventTapSource
+    CFRunLoopAddSource(CFRunLoopGetMain(), eventTapSource, .commonModes)
+    CGEvent.tapEnable(tap: eventTap, enable: true)
+    return true
+  }
+
+  fileprivate func handleEventTap(type: CGEventType, event: CGEvent) -> Bool {
+    if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
+      if let eventTap {
+        CGEvent.tapEnable(tap: eventTap, enable: true)
+      }
+      return false
+    }
+
+    switch type {
+    case .leftMouseDown:
+      return beginHandling(at: event.location)
+    case .mouseMoved, .leftMouseDragged:
+      guard window != nil else { return false }
+      scheduleMouseMoved(to: event.location)
+      return type == .leftMouseDragged
+    case .leftMouseUp:
+      guard window != nil else { return false }
+      scheduleMouseMoved(to: event.location)
+      DispatchQueue.main.async { [weak self] in
+        self?.finishHandling()
+      }
+      return true
+    default:
+      return false
+    }
+  }
+
+  private func move(to currentMouse: CGPoint) {
     guard let window = self.window else { return }
-    let currentMouse = Mouse.location()
     let dest = CGPoint(
       x: trackedWindowOrigin.x + (currentMouse.x - initialMouseLocation.x),
       y: trackedWindowOrigin.y + (currentMouse.y - initialMouseLocation.y)
@@ -278,9 +372,8 @@ class WindowHandler {
     window.moveTo(dest)
   }
 
-  private func resize(_ event: NSEvent) {
+  private func resize(to currentMouse: CGPoint) {
     guard let window = self.window else { return }
-    let currentMouse = Mouse.location()
     let dx = currentMouse.x - initialMouseLocation.x
     let dy = currentMouse.y - initialMouseLocation.y
 
@@ -293,7 +386,7 @@ class WindowHandler {
       return
     }
 
-    let corner = resizeCorner ?? resolveResizeCorner(for: window, at: NSEvent.mouseLocation)
+    let corner = resizeCorner ?? resolveResizeCorner(for: window, at: currentMouse)
     resizeCorner = corner
     guard let corner else { return }
 
@@ -312,10 +405,27 @@ class WindowHandler {
     let newMinY = min(movingY, fixedY)
     let newMaxY = max(movingY, fixedY)
 
-    window.moveTo(CGPoint(x: newMinX, y: newMinY))
-    window.resizeTo(CGSize(width: newMaxX - newMinX, height: newMaxY - newMinY))
+    window.setFrame(
+      CGRect(
+        x: newMinX,
+        y: newMinY,
+        width: newMaxX - newMinX,
+        height: newMaxY - newMinY
+      )
+    )
   }
 
+}
+
+private func windowHandlerEventTapCallback(
+  proxy: CGEventTapProxy,
+  type: CGEventType,
+  event: CGEvent,
+  userInfo: UnsafeMutableRawPointer?
+) -> Unmanaged<CGEvent>? {
+  guard let userInfo else { return Unmanaged.passUnretained(event) }
+  let handler = Unmanaged<WindowHandler>.fromOpaque(userInfo).takeUnretainedValue()
+  return handler.handleEventTap(type: type, event: event) ? nil : Unmanaged.passUnretained(event)
 }
 
 private struct OnScreenWindow {
@@ -347,23 +457,13 @@ private func resolveResizeCorner(
   guard let size = window.size else { return nil }
   guard let pos = window.position else { return nil }
 
-  let axMouseLocation: CGPoint
-  if let mainScreen = NSScreen.main {
-    axMouseLocation = CGPoint(
-      x: mouseLocation.x,
-      y: mainScreen.frame.maxY - mouseLocation.y
-    )
-  } else {
-    axMouseLocation = mouseLocation
-  }
-
   let minX = pos.x
   let maxX = pos.x + size.width
   let minY = pos.y
   let maxY = pos.y + size.height
   func distanceSquared(to point: CGPoint) -> CGFloat {
-    let dx = axMouseLocation.x - point.x
-    let dy = axMouseLocation.y - point.y
+    let dx = mouseLocation.x - point.x
+    let dy = mouseLocation.y - point.y
     return dx * dx + dy * dy
   }
 

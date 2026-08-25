@@ -42,6 +42,11 @@ class AccessibilityElement {
     } catch {}
   }
 
+  func setFrame(_ frame: CGRect) {
+    resizeTo(frame.size)
+    moveTo(frame.origin)
+  }
+
   // mark: Private
 
   private func findWindow() -> AccessibilityElement? {
