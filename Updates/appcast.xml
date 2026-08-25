@@ -3,13 +3,15 @@
 <channel>
 <title>Moves</title>
 <item>
-<title>1.10.0</title>
-<pubDate>Mon, 24 Aug 2026 09:07:32 +0000</pubDate>
+<title>1.10.1</title>
+<pubDate>Tue, 25 Aug 2026 08:50:52 +0000</pubDate>
 <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
-<enclosure url="https://github.com/mikker/Moves.app/releases/download/v1.10.0/Moves.app.zip" sparkle:version="137" sparkle:shortVersionString="1.10.0" length="1907681" type="application/octet-stream" sparkle:edSignature="fSH5WU/IbD0WKd/3gaCBDYb4Q/dzYWhnYPl54N+v3wiDuc10CYpaaNLSm4L3FMLf/DY+BzK1gKYYyryfy8X+Bw=="/>
+<enclosure url="https://github.com/mikker/Moves.app/releases/download/v1.10.1/Moves.app.zip" sparkle:version="141" sparkle:shortVersionString="1.10.1" length="1913330" type="application/octet-stream" sparkle:edSignature="rui9r+BedpN7w5dP/kON2qiYH8jg8L3+18SxHdGwbC6DMlMv7ia1CJWIlQMhHHKQTxX5M2ze8FW2DGg2qTCMDA=="/>
 <description><![CDATA[
 <ul>
-<li>Add an option to require clicking before handling windows</li>
+<li>Fix URL scheme window targeting</li>
+<li>Improve click-driven window handling</li>
+<li>Fix test module resolution</li>
 </ul>
 ]]></description>
 </item>

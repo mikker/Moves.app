@@ -1,3 +1,9 @@
+## 1.10.1 (141)
+
+- Fix URL scheme window targeting
+- Improve click-driven window handling
+- Fix test module resolution
+
 ## 1.10.0 (137)
 
 - Add an option to require clicking before handling windows
