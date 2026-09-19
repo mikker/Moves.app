@@ -30,6 +30,13 @@ class StatusItem {
     updatesItem.target = self
     menu.addItem(updatesItem)
 
+    let version =
+      Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
+    let aboutItem = NSMenuItem(
+      title: "About Moves \(version)", action: #selector(openRepo), keyEquivalent: "")
+    aboutItem.target = self
+    menu.addItem(aboutItem)
+
     menu.addItem(NSMenuItem.separator())
     menu.addItem(
       NSMenuItem(
@@ -49,5 +56,9 @@ class StatusItem {
 
   @objc func checkForUpdates() {
     handleCheckForUpdates?()
+  }
+
+  @objc func openRepo() {
+    NSWorkspace.shared.open(URL(string: "https://github.com/mikker/Moves.app")!)
   }
 }
