@@ -59,6 +59,7 @@ class WindowHandler {
 
   @discardableResult
   private func beginHandling(at loc: CGPoint = Mouse.location()) -> Bool {
+    guard validateModifiers() else { return false }
     guard let window = window(at: loc) else { return false }
 
     let app = window.application
@@ -271,12 +272,26 @@ class WindowHandler {
   }
 
   private func mouseMoved(at location: CGPoint) {
+    guard validateModifiers() else { return }
     switch intention {
     case .move: move(to: location)
     case .resize: resize(to: location)
     case .idle:
       assertionFailure("mouseMoved obseved while ignoring")
     }
+  }
+
+  @discardableResult
+  func validateModifiers(
+    flags: NSEvent.ModifierFlags = NSEvent.ModifierFlags(
+      rawValue: UInt(CGEventSource.flagsState(.combinedSessionState).rawValue))
+  ) -> Bool {
+    guard intention != .idle else { return false }
+    guard Modifiers.intentionFrom(flags) == intention else {
+      intention = .idle
+      return false
+    }
+    return true
   }
 
   private func scheduleMouseMoved(to location: CGPoint) {
@@ -343,6 +358,10 @@ class WindowHandler {
       }
       return false
     }
+
+    guard validateModifiers(
+      flags: NSEvent.ModifierFlags(rawValue: UInt(event.flags.rawValue))
+    ) else { return false }
 
     switch type {
     case .leftMouseDown:
