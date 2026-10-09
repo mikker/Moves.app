@@ -6,8 +6,7 @@ class Modifiers {
 
   let handleChange: ChangeHandler
 
-  var onMonitors: [Any?] = []
-  var offMonitors: [Any?] = []
+  private var monitors: [Any?] = []
   private var eventTap: CFMachPort?
   private var eventTapSource: CFRunLoopSource?
   private var shortcutInProgress = false
@@ -29,17 +28,20 @@ class Modifiers {
 
     if installEventTap() { return }
 
-    onMonitors.append(contentsOf: [
-      NSEvent.addGlobalMonitorForEvents(matching: [.flagsChanged, .keyDown], handler: self.globalMonitor),
-      NSEvent.addLocalMonitorForEvents(matching: [.flagsChanged, .keyDown], handler: self.localMonitor),
+    let events: NSEvent.EventTypeMask = [
+      .flagsChanged, .keyDown, .mouseMoved, .leftMouseDown, .leftMouseDragged, .leftMouseUp,
+    ]
+    monitors.append(contentsOf: [
+      NSEvent.addGlobalMonitorForEvents(matching: events, handler: self.globalMonitor),
+      NSEvent.addLocalMonitorForEvents(matching: events, handler: self.localMonitor),
     ])
   }
 
   func remove() {
     intention = .idle
     shortcutInProgress = false
-    removeOffMonitors()
-    removeOnMonitors()
+    monitors.compactMap { $0 }.forEach(NSEvent.removeMonitor)
+    monitors = []
     if let eventTapSource {
       CFRunLoopRemoveSource(CFRunLoopGetMain(), eventTapSource, .commonModes)
       self.eventTapSource = nil
@@ -50,35 +52,8 @@ class Modifiers {
     }
   }
 
-  private func removeOnMonitors() {
-    onMonitors.forEach { (monitor) in
-      guard let m = monitor else { return }
-      NSEvent.removeMonitor(m)
-    }
-
-    onMonitors = []
-  }
-
-  private func removeOffMonitors() {
-    offMonitors.forEach { (monitor) in
-      guard let m = monitor else { return }
-      NSEvent.removeMonitor(m)
-    }
-
-    offMonitors = []
-  }
-
   private func intentionChanged(oldValue: Intention) {
     guard oldValue != intention else { return }
-
-    //    print("intention:\(intention)")
-
-    if intention == .idle {
-      removeOffMonitors()
-    } else {
-      setupOffMonitors()
-    }
-
     handleChange(intention)
   }
 
@@ -109,15 +84,6 @@ class Modifiers {
     return mods
   }
 
-  private func setupOffMonitors() {
-    removeOffMonitors()
-    let events: NSEvent.EventTypeMask = [.mouseMoved, .leftMouseDown, .leftMouseDragged, .leftMouseUp]
-    offMonitors.append(contentsOf: [
-      NSEvent.addGlobalMonitorForEvents(matching: events, handler: self.globalMonitor),
-      NSEvent.addLocalMonitorForEvents(matching: events, handler: self.localMonitor),
-    ])
-  }
-
   private func globalMonitor(_ event: NSEvent) {
     handleEvent(type: event.type, flags: event.modifierFlags)
   }
@@ -141,8 +107,12 @@ class Modifiers {
   }
 
   private func installEventTap() -> Bool {
-    let mask = (CGEventMask(1) << CGEventType.flagsChanged.rawValue)
-      | (CGEventMask(1) << CGEventType.keyDown.rawValue)
+    let eventTypes: [CGEventType] = [
+      .flagsChanged, .keyDown, .mouseMoved, .leftMouseDown, .leftMouseDragged, .leftMouseUp,
+    ]
+    let mask = eventTypes.reduce(CGEventMask(0)) { mask, type in
+      mask | (CGEventMask(1) << type.rawValue)
+    }
     guard let eventTap = CGEvent.tapCreate(
       tap: .cgSessionEventTap,
       place: .headInsertEventTap,

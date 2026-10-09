@@ -69,6 +69,18 @@ class MovesTests: XCTestCase {
     XCTAssertEqual(modifiers.intention, .idle)
   }
 
+  func testMouseEventClearsShortcutSuppressionAfterMissingModifierRelease() {
+    for type: NSEvent.EventType in [.mouseMoved, .leftMouseDown, .leftMouseDragged, .leftMouseUp] {
+      var changes: [Intention] = []
+      let modifiers = Modifiers { changes.append($0) }
+      modifiers.handleEvent(type: .flagsChanged, flags: [.command, .shift])
+      modifiers.handleEvent(type: .keyDown, flags: [.command, .shift])
+      modifiers.handleEvent(type: type, flags: [])
+      modifiers.handleEvent(type: .flagsChanged, flags: [.command, .shift])
+      XCTAssertEqual(changes, [.move, .idle, .move])
+    }
+  }
+
   func testWindowHandlerRejectsStaleModifiers() {
     let handler = WindowHandler()
     handler.intention = .move
