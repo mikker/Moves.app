@@ -1,3 +1,9 @@
+## 1.10.2 (147)
+
+- Add About menu item with version and repo link
+- Fix window handling during screenshot shortcuts
+- Fix shortcut recovery after missed releases
+
 ## 1.10.1 (141)
 
 - Fix URL scheme window targeting
