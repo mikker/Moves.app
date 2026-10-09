@@ -3,15 +3,15 @@
 <channel>
 <title>Moves</title>
 <item>
-<title>1.10.1</title>
-<pubDate>Tue, 25 Aug 2026 08:50:52 +0000</pubDate>
+<title>1.10.2</title>
+<pubDate>Fri, 09 Oct 2026 11:31:21 +0000</pubDate>
 <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
-<enclosure url="https://github.com/mikker/Moves.app/releases/download/v1.10.1/Moves.app.zip" sparkle:version="141" sparkle:shortVersionString="1.10.1" length="1913330" type="application/octet-stream" sparkle:edSignature="rui9r+BedpN7w5dP/kON2qiYH8jg8L3+18SxHdGwbC6DMlMv7ia1CJWIlQMhHHKQTxX5M2ze8FW2DGg2qTCMDA=="/>
+<enclosure url="https://github.com/mikker/Moves.app/releases/download/v1.10.2/Moves.app.zip" sparkle:version="147" sparkle:shortVersionString="1.10.2" length="1915690" type="application/octet-stream" sparkle:edSignature="2B4PlN52ZACbhWbAOKD5Q9hL0bmEMyqxGRp4zP4KFoaMiabc2h5bRIlQpeM6/7ndDQPwgjUGQiWtOgAkmuHuAw=="/>
 <description><![CDATA[
 <ul>
-<li>Fix URL scheme window targeting</li>
-<li>Improve click-driven window handling</li>
-<li>Fix test module resolution</li>
+<li>Add About menu item with version and repo link</li>
+<li>Fix window handling during screenshot shortcuts</li>
+<li>Fix shortcut recovery after missed releases</li>
 </ul>
 ]]></description>
 </item>
