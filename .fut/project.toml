@@ -1,0 +1,9 @@
+#:schema https://fut.sh/schemas/project.json
+
+[extension.wt]
+open_existing = true
+command = ["pi"]
+
+[extension.run]
+command = ["just", "run"]
+auto_start = false
