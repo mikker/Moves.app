@@ -1,3 +1,7 @@
+## 1.10.3 (150)
+
+- Fix moving and resizing windows without click
+
 ## 1.10.2 (147)
 
 - Add About menu item with version and repo link
