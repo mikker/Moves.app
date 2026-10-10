@@ -3,15 +3,13 @@
 <channel>
 <title>Moves</title>
 <item>
-<title>1.10.2</title>
-<pubDate>Fri, 09 Oct 2026 11:31:21 +0000</pubDate>
+<title>1.10.3</title>
+<pubDate>Sat, 10 Oct 2026 22:57:14 +0000</pubDate>
 <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
-<enclosure url="https://github.com/mikker/Moves.app/releases/download/v1.10.2/Moves.app.zip" sparkle:version="147" sparkle:shortVersionString="1.10.2" length="1915690" type="application/octet-stream" sparkle:edSignature="2B4PlN52ZACbhWbAOKD5Q9hL0bmEMyqxGRp4zP4KFoaMiabc2h5bRIlQpeM6/7ndDQPwgjUGQiWtOgAkmuHuAw=="/>
+<enclosure url="https://github.com/mikker/Moves.app/releases/download/v1.10.3/Moves.app.zip" sparkle:version="150" sparkle:shortVersionString="1.10.3" length="1914979" type="application/octet-stream" sparkle:edSignature="i7518LpeyCz85m1/HqkNpi+Il1fXeOXSE1NUB6Z/urxojHnT0klzBqFT7NHvSUjySj/492Dg1CqYH82fdvy1Ag=="/>
 <description><![CDATA[
 <ul>
-<li>Add About menu item with version and repo link</li>
-<li>Fix window handling during screenshot shortcuts</li>
-<li>Fix shortcut recovery after missed releases</li>
+<li>Fix moving and resizing windows without click</li>
 </ul>
 ]]></description>
 </item>
