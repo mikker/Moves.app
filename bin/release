@@ -2,7 +2,7 @@
 set -euo pipefail
 
 if [[ -n "${1:-}" ]]; then
-  exec just distribute VERSION="$1"
+  exec just distribute "$1"
 fi
 
 exec just distribute
