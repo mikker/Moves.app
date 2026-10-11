@@ -3,13 +3,13 @@
 <channel>
 <title>Moves</title>
 <item>
-<title>1.10.3</title>
-<pubDate>Sat, 10 Oct 2026 22:57:14 +0000</pubDate>
+<title>1.10.4</title>
+<pubDate>Sun, 11 Oct 2026 21:10:08 +0000</pubDate>
 <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
-<enclosure url="https://github.com/mikker/Moves.app/releases/download/v1.10.3/Moves.app.zip" sparkle:version="150" sparkle:shortVersionString="1.10.3" length="1914979" type="application/octet-stream" sparkle:edSignature="i7518LpeyCz85m1/HqkNpi+Il1fXeOXSE1NUB6Z/urxojHnT0klzBqFT7NHvSUjySj/492Dg1CqYH82fdvy1Ag=="/>
+<enclosure url="https://github.com/mikker/Moves.app/releases/download/v1.10.4/Moves.app.zip" sparkle:version="154" sparkle:shortVersionString="1.10.4" length="1914983" type="application/octet-stream" sparkle:edSignature="Fo2K0eQ14H1yqju+1USxhClYqfzDzmOrLZJPXD+I3PCDMMgBhv07r1sa3nAa50EWagwVCjXNZBug7SnOwC4JCQ=="/>
 <description><![CDATA[
 <ul>
-<li>Fix moving and resizing windows without click</li>
+<li>Fix excluded apps still allowing window movement and resizing (#25)</li>
 </ul>
 ]]></description>
 </item>
