@@ -64,8 +64,9 @@ class WindowHandler {
 
     let app = window.application
 
-    if let path = applicationPath(app: app),
-      Defaults[.excludedApplicationPaths].contains(path)
+    if let pid = window.pid,
+      let url = NSRunningApplication(processIdentifier: pid)?.bundleURL,
+      ApplicationExclusions.contains(url, paths: Defaults[.excludedApplicationPaths])
     {
       return false
     }
@@ -242,33 +243,6 @@ class WindowHandler {
   private func frameDistance(_ lhs: CGRect, _ rhs: CGRect) -> CGFloat {
     abs(lhs.minX - rhs.minX) + abs(lhs.minY - rhs.minY) + abs(lhs.width - rhs.width)
       + abs(lhs.height - rhs.height)
-  }
-
-  private func getBundleID(for axApplication: AXUIElement) -> String? {
-    var pid: pid_t = 0
-    if AXUIElementGetPid(axApplication, &pid) == .success {
-      if let app = NSRunningApplication(processIdentifier: pid) {
-        return app.bundleIdentifier
-      }
-    }
-    return nil
-  }
-
-  private func applicationPath(app maybeApp: Application?) -> String? {
-    guard let app = maybeApp else {
-      print("no app")
-      return nil
-    }
-    guard let bundleId: String = getBundleID(for: app.element) else {
-      print("no bundle id")
-      return nil
-    }
-    guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleId) else {
-      print("no url")
-      return nil
-    }
-    let path = url.path
-    return path.hasSuffix("/") ? path : path.appending("/")
   }
 
   private func mouseMoved(at location: CGPoint) {

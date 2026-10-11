@@ -98,6 +98,35 @@ class MovesTests: XCTestCase {
     XCTAssertEqual(changes, [.resize, .idle])
   }
 
+  func testExcludedApplicationMatchesPathsWithOrWithoutTrailingSlash() {
+    let path = "/Applications/Adobe InDesign 2026/Adobe InDesign 2026.app"
+    for storedPath in [path, path + "/"] {
+      for runningPath in [path, path + "/"] {
+        XCTAssertTrue(ApplicationExclusions.contains(
+          URL(fileURLWithPath: runningPath), paths: [storedPath]))
+      }
+    }
+  }
+
+  func testExcludedApplicationDoesNotMatchAnotherInstalledCopy() {
+    XCTAssertFalse(ApplicationExclusions.contains(
+      URL(fileURLWithPath: "/Applications/Example.app"),
+      paths: ["/Users/Shared/Example.app"]))
+  }
+
+  func testExcludedApplicationMatchesSymbolicLink() throws {
+    let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: directory) }
+    let application = directory.appendingPathComponent("Example.app")
+    let link = directory.appendingPathComponent("Linked.app")
+    try FileManager.default.createDirectory(at: application, withIntermediateDirectories: true)
+    try FileManager.default.createSymbolicLink(at: link, withDestinationURL: application)
+
+    XCTAssertTrue(ApplicationExclusions.contains(application, paths: [link.path]))
+    XCTAssertTrue(ApplicationExclusions.contains(link, paths: [application.path]))
+  }
+
   func testRegex() {
     let input = "file:///Applications/Xcode.app/"
     let pattern = "^file://(.*)/$"

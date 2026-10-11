@@ -29,3 +29,12 @@ extension Defaults.Keys {
 
   static let excludedApplicationPaths = Key<Set<String>>("excludedApplicationPaths", default: [])
 }
+
+enum ApplicationExclusions {
+  static func contains(_ applicationURL: URL, paths: Set<String>) -> Bool {
+    let applicationPath = applicationURL.standardizedFileURL.resolvingSymlinksInPath().path
+    return paths.contains {
+      URL(fileURLWithPath: $0).standardizedFileURL.resolvingSymlinksInPath().path == applicationPath
+    }
+  }
+}
