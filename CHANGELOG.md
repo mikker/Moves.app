@@ -1,3 +1,7 @@
+## 1.10.4 (154)
+
+- Fix excluded apps still allowing window movement and resizing (#25)
+
 ## 1.10.3 (150)
 
 - Fix moving and resizing windows without click
